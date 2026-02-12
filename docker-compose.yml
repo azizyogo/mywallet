@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mywallet_mysql
+    restart: unless-stopped
+    command: --default-time-zone='+00:00'
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-mywallet_db}
+      MYSQL_USER: ${MYSQL_USER:-mywallet_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-mywallet_pass}
+      TZ: UTC
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - mywallet_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    image: migrate/migrate
+    container_name: mywallet_migrate
+    networks:
+      - mywallet_network
+    volumes:
+      - ./migrations:/migrations
+    command: 
+      [
+        "-path", "/migrations",
+        "-database", "mysql://${MYSQL_USER:-mywallet_user}:${MYSQL_PASSWORD:-mywallet_pass}@tcp(mysql:3306)/${MYSQL_DATABASE:-mywallet_db}",
+        "up"
+      ]
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: on-failure
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mywallet_api
+    restart: unless-stopped
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    environment:
+      SERVER_PORT: ${SERVER_PORT:-8080}
+      GIN_MODE: ${GIN_MODE:-release}
+      MYSQL_DSN: "${MYSQL_USER:-mywallet_user}:${MYSQL_PASSWORD:-mywallet_pass}@tcp(mysql:3306)/${MYSQL_DATABASE:-mywallet_db}?charset=utf8mb4&parseTime=True&loc=UTC"
+      MYSQL_MAX_IDLE_CONNS: ${MYSQL_MAX_IDLE_CONNS:-10}
+      MYSQL_MAX_OPEN_CONNS: ${MYSQL_MAX_OPEN_CONNS:-100}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION_HOURS: ${JWT_EXPIRATION_HOURS:-24}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - mywallet_network
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  mywallet_network:
+    driver: bridge

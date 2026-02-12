@@ -1,0 +1,20 @@
+CREATE TABLE transactions (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL,
+    transaction_type ENUM('TOPUP', 'TRANSFER') NOT NULL,
+    sender_wallet_id BIGINT UNSIGNED NULL,
+    receiver_wallet_id BIGINT UNSIGNED NOT NULL,
+    amount DECIMAL(19, 2) NOT NULL,
+    status ENUM('PENDING', 'SUCCESS', 'FAILED') DEFAULT 'PENDING',
+    description VARCHAR(500),
+    FOREIGN KEY (sender_wallet_id) REFERENCES wallets(id) ON DELETE RESTRICT,
+    FOREIGN KEY (receiver_wallet_id) REFERENCES wallets(id) ON DELETE RESTRICT,
+    INDEX idx_sender_wallet (sender_wallet_id),
+    INDEX idx_receiver_wallet (receiver_wallet_id),
+    INDEX idx_created_at (created_at),
+    INDEX idx_status (status),
+    INDEX idx_deleted_at (deleted_at),
+    CONSTRAINT chk_amount CHECK (amount > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

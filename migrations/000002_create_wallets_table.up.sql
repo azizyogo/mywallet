@@ -1,0 +1,12 @@
+CREATE TABLE wallets (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL,
+    user_id BIGINT UNSIGNED UNIQUE NOT NULL,
+    balance DECIMAL(19, 2) DEFAULT 0.00,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
+    INDEX idx_user_id (user_id),
+    INDEX idx_deleted_at (deleted_at),
+    CONSTRAINT chk_balance CHECK (balance >= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -1,1 +1,863 @@
-# mywallet
+# E-Wallet RESTful API
+
+A production-ready e-wallet system built with Go, featuring user management, wallet operations, and secure money transfers with ACID compliance and race condition handling.
+
+[![Go Version](https://img.shields.io/badge/Go-1.24-blue.svg)](https://golang.org)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+## 🚀 Quick Start
+
+```bash
+# Clone and setup
+git clone <repository-url>
+cd mywallet
+cp .env.example .env
+
+# Run with Docker (easiest)
+docker-compose up -d
+
+# API is ready at http://localhost:8080
+```
+
+Test it:
+```bash
+# Register a user
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Alice","email":"alice@example.com","password":"password123"}'
+
+# Login and get token
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"alice@example.com","password":"password123"}'
+```
+
+## 📚 Table of Contents
+- [Architecture](#-architecture)
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
+- [Getting Started](#-getting-started)
+- [API Endpoints](#-api-endpoints)
+- [Database Schema](#-database-schema)
+- [Security Features](#-security-features)
+- [Docker Commands](#-docker-commands)
+- [Migration Management](#-migration-management)
+- [Production Deployment](#-production-deployment)
+- [Troubleshooting](#-troubleshooting)
+
+## 🛠️ Tech Stack
+
+**Backend Framework:**
+- Go 1.24
+- Gin Web Framework v1.11.0 (HTTP router)
+
+**Database:**
+- MySQL 8.0
+- GORM v1.31.1 (ORM)
+
+**Authentication & Security:**
+- JWT (golang-jwt/jwt v5.3.1)
+- Bcrypt (golang.org/x/crypto)
+- go-playground/validator v10.27.0
+
+**Configuration & Environment:**
+- Viper v1.21.0 (config management)
+
+**DevOps:**
+- Docker & Docker Compose
+- golang-migrate (database migrations)
+
+**Architecture Pattern:**
+- Clean Architecture (layered)
+- Repository Pattern
+- Dependency Injection
+
+## 🏗️ Architecture
+
+Clean layered architecture with clear separation of concerns:
+
+```
+mywallet/
+├── controller/       # HTTP handlers (presentation layer)
+├── usecase/          # Business logic & orchestration
+├── repository/       # Data access layer
+├── model/            # Database models (GORM)
+├── dto/              # Request/Response DTOs
+├── middleware/       # Auth, CORS, error handling
+├── apperror/         # Application-specific errors
+├── constant/         # Application constants
+├── utils/            # App utilities (converter, pagination)
+├── pkg/              # Reusable packages (jwt, hash, validator)
+├── config/           # Configuration management
+├── server/           # Server initialization
+└── migrations/       # Database migrations
+```
+
+**Architecture Pattern**: Controller → Usecase → Repository
+
+## ✨ Features
+
+### 1. User Management
+- ✅ User registration with email validation
+- ✅ Secure login with JWT authentication
+- ✅ Password hashing with bcrypt (cost=12)
+- ✅ User profile retrieval
+
+### 2. Wallet Management
+- ✅ Automatic wallet creation on user registration
+- ✅ Balance inquiry
+- ✅ Top-up functionality with validation
+- ✅ Decimal precision for financial data (19,2)
+
+### 3. Transaction Management
+- ✅ Transfer money between users
+- ✅ Transaction history with pagination
+- ✅ ACID compliance via database transactions
+- ✅ Race condition prevention (SELECT FOR UPDATE)
+- ✅ Transaction status tracking (PENDING/SUCCESS/FAILED)
+
+### 4. Security Features (OWASP Compliant)
+- ✅ JWT-based authentication with configurable expiration
+- ✅ Password hashing with bcrypt
+- ✅ SQL injection prevention (prepared statements via GORM)
+- ✅ Input validation & sanitization
+- ✅ Soft delete for data integrity
+- ✅ UTC timestamps for consistency
+- ✅ CORS middleware
+- ✅ Centralized error handling
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- **Docker & Docker Compose** (recommended) OR
+- Go 1.24+
+- MySQL 8.0+
+- golang-migrate (for local development)
+
+### Option 1: Docker (Recommended)
+
+1. **Clone the repository**
+```bash
+git clone <repository-url>
+cd mywallet
+```
+
+2. **Setup environment variables**
+```bash
+cp .env.example .env
+# Edit .env and change JWT_SECRET to a secure random string
+```
+
+3. **Run with Docker Compose**
+```bash
+# Start all services (MySQL + migrations + app)
+docker-compose up -d
+
+# View logs
+docker-compose logs -f app
+
+# Stop services
+docker-compose down
+
+# Stop and remove volumes (⚠️ deletes database)
+docker-compose down -v
+```
+
+The API will be available at `http://localhost:8080`
+
+### Option 2: Local Development
+
+1. **Clone the repository**
+```bash
+git clone <repository-url>
+cd mywallet
+```
+
+2. **Install dependencies**
+```bash
+go mod download
+```
+
+3. **Setup environment variables**
+```bash
+cp .env.example .env
+# Edit .env with your local MySQL configuration
+```
+
+4. **Install golang-migrate**
+```bash
+# Windows (Scoop)
+scoop install migrate
+
+# Windows (Chocolatey)
+choco install golang-migrate
+
+# MacOS
+brew install golang-migrate
+
+# Linux
+curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
+sudo mv migrate /usr/local/bin/
+```
+
+5. **Create database**
+```sql
+CREATE DATABASE mywallet_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+6. **Run migrations**
+```bash
+migrate -path migrations -database "mysql://root:password@tcp(localhost:3306)/mywallet_db" up
+```
+
+7. **Run the application**
+```bash
+go run main.go
+```
+
+The server will start at `http://localhost:8080`
+
+## � Makefile Commands
+
+For convenience, common operations are available via Makefile:
+
+```bash
+# View all available commands
+make help
+
+# Application
+make build          # Build binary
+make run            # Run application
+make test           # Run tests
+make deps           # Download dependencies
+make clean          # Clean build artifacts
+
+# Docker
+make docker-up      # Start all services
+make docker-down    # Stop all services
+make docker-clean   # Stop all services and remove volumes (deletes data)
+make docker-logs    # View logs
+make docker-restart # Restart services
+
+# Database
+make migrate-up     # Apply migrations
+make migrate-down   # Rollback migration
+make migrate-create NAME=table_name  # Create new migration
+```
+
+## �📡 API Endpoints
+
+### Base URL
+- Local: `http://localhost:8080`
+- Production: `https://api.yourdomain.com`
+
+### Response Format
+All responses follow this structure:
+```json
+{
+  "status": "success|error",
+  "data": { ... },      // On success
+  "meta": { ... },      // Optional: pagination, rate limits, etc.
+  "error": "message"    // On error
+}
+```
+
+### Authentication (Public)
+
+#### Register User
+```http
+POST /api/auth/register
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "SecurePass123"
+}
+
+Response (200 OK):
+{
+  "status": "success",
+  "data": {
+    "id": 1,
+    "name": "John Doe",
+    "email": "j***@example.com",
+    "created_at": "2026-02-12T10:00:00Z"
+  }
+}
+```
+
+#### Login
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "john@example.com",
+  "password": "SecurePass123"
+}
+
+Response (200 OK):
+{
+  "status": "success",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "id": 1,
+      "name": "John Doe",
+      "email": "j***@example.com",
+      "created_at": "2026-02-12T10:00:00Z"
+    }
+  }
+}
+```
+
+### User (Protected - Requires JWT)
+
+#### Get Profile
+```http
+GET /api/users/profile
+Authorization: Bearer <your-jwt-token>
+
+Response (200 OK):
+{
+  "status": "success",
+  "data": {
+    "id": 1,
+    "name": "John Doe",
+    "email": "j***@example.com",
+    "created_at": "2026-02-12T10:00:00Z"
+  }
+}
+```
+
+### Wallet (Protected - Requires JWT)
+
+#### Get Balance
+```http
+GET /api/wallets/balance
+Authorization: Bearer <your-jwt-token>
+
+Response (200 OK):
+{
+  "status": "success",
+  "data": {
+    "id": 1,
+    "user_id": 1,
+    "balance": 1000000.00,
+    "created_at": "2026-02-12T10:00:00Z",
+    "updated_at": "2026-02-12T15:30:00Z"
+  }
+}
+```
+
+#### Top Up Wallet
+```http
+POST /api/wallets/topup
+Authorization: Bearer <your-jwt-token>
+Content-Type: application/json
+
+{
+  "amount": 500000.00
+}
+
+Response (200 OK):
+{
+  "status": "success",
+  "data": {
+    "wallet_id": 1,
+    "new_balance": 1500000.00,
+    "transaction_id": 42
+  }
+}
+```
+
+### Transactions (Protected - Requires JWT)
+
+#### Transfer Money
+```http
+POST /api/transactions/transfer
+Authorization: Bearer <your-jwt-token>
+Content-Type: application/json
+
+{
+  "receiver_email": "jane@example.com",
+  "amount": 150000.00,
+  "description": "Payment for services"
+}
+
+Response (200 OK):
+{
+  "status": "success",
+  "data": {
+    "transaction_id": 43,
+    "sender_wallet_id": 1,
+    "receiver_wallet_id": 2,
+    "amount": 150000.00,
+    "new_balance": 1350000.00,
+    "status": "SUCCESS"
+  }
+}
+```
+
+#### Get Transaction History
+```http
+GET /api/transactions/history?page=1&limit=10
+Authorization: Bearer <your-jwt-token>
+
+Response (200 OK):
+{
+  "status": "success",
+  "data": [
+    {
+      "id": 43,
+      "transaction_type": "TRANSFER",
+      "sender_wallet_id": 1,
+      "receiver_wallet_id": 2,
+      "amount": 150000.00,
+      "status": "SUCCESS",
+      "description": "Payment for services",
+      "created_at": "2026-02-12T15:30:00Z"
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "limit": 10,
+    "total": 25,
+    "total_pages": 3
+  }
+}
+```
+
+### Error Responses
+
+**Validation Error (400):**
+```json
+{
+  "status": "error",
+  "error": "Amount must be greater than zero"
+}
+```
+
+**Unauthorized (401):**
+```json
+{
+  "status": "error",
+  "error": "Unauthorized access"
+}
+```
+
+**Not Found (404):**
+```json
+{
+  "status": "error",
+  "error": "Wallet not found"
+}
+```
+
+**Conflict (409):**
+```json
+{
+  "status": "error",
+  "error": "Insufficient balance for this transaction"
+}
+```
+
+## 🗄️ Database Schema
+
+### Users Table
+- Primary Key: `id`
+- Unique: `email`
+- Fields: `name`, `password_hash`
+- Timestamps: `created_at`, `updated_at`, `deleted_at` (soft delete)
+
+### Wallets Table
+- Primary Key: `id`
+- Foreign Key: `user_id` → `users(id)` (UNIQUE)
+- Fields: `balance` (DECIMAL 19,2)
+- Constraint: `balance >= 0`
+- Timestamps: `created_at`, `updated_at`, `deleted_at`
+
+### Transactions Table
+- Primary Key: `id`
+- Foreign Keys: `sender_wallet_id`, `receiver_wallet_id` → `wallets(id)`
+- Fields: `transaction_type` (TOPUP/TRANSFER), `amount`, `status` (PENDING/SUCCESS/FAILED), `description`
+- Indexes: `created_at`, `sender_wallet_id`, `receiver_wallet_id`, `status`
+- Timestamps: `created_at`, `updated_at`, `deleted_at`
+- Note: All timestamps stored in UTC
+
+## 🛡️ Security Features
+
+### OWASP Top 10 Mitigation
+
+1. **A01: Broken Access Control**
+   - JWT authentication on protected endpoints
+   - User can only access their own resources
+   - Middleware-based authorization
+
+2. **A02: Cryptographic Failures**
+   - Bcrypt password hashing (cost=12)
+   - JWT with HMAC-SHA256
+   - Secure environment variable handling
+
+3. **A03: Injection**
+   - GORM ORM with prepared statements
+   - Input validation with go-playground/validator
+   - Parameterized queries
+
+4. **A04: Insecure Design**
+   - Database transactions for ACID compliance
+   - SELECT FOR UPDATE for race condition prevention
+   - Proper error handling without information leakage
+
+5. **A05: Security Misconfiguration**
+   - Environment variables for secrets
+   - Gin release mode for production
+   - UTC timestamps for consistency
+
+6. **A07: Identification & Authentication Failures**
+   - Strong password requirements (min 8 characters)
+   - JWT expiration (configurable, default 24 hours)
+   - Email validation
+
+7. **A08: Software & Data Integrity Failures**
+   - Database constraints (CHECK balance >= 0)
+   - Transaction rollback on failure
+   - Soft delete for data recovery
+
+8. **A09: Security Logging & Monitoring**
+   - Audit timestamps on all tables (created_at, updated_at)
+   - Transaction status tracking
+   - Email masking in responses (privacy)
+
+### Concurrency & Race Condition Handling
+- **SELECT FOR UPDATE** (pessimistic locking) used in transfers
+- Database transactions ensure atomicity
+- Proper transaction isolation level
+
+## 🧪 Testing
+
+### Postman Collection
+
+Import `E-Wallet-API.postman_collection.json` into Postman for easy API testing. The collection includes:
+- Auto-saves JWT token after login
+- All endpoints with example payloads
+- Environment variables for base URL
+
+### Manual Testing with cURL
+
+**Register:**
+```bash
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Alice","email":"alice@example.com","password":"password123"}'
+```
+
+**Login:**
+```bash
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"alice@example.com","password":"password123"}'
+```
+
+**Get Balance:**
+```bash
+curl -X GET http://localhost:8080/api/wallets/balance \
+  -H "Authorization: Bearer <your-token>"
+```
+
+**Top Up:**
+```bash
+curl -X POST http://localhost:8080/api/wallets/topup \
+  -H "Authorization: Bearer <your-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"amount":1000000}'
+```
+
+**Transfer:**
+```bash
+curl -X POST http://localhost:8080/api/transactions/transfer \
+  -H "Authorization: Bearer <your-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"receiver_email":"bob@example.com","amount":50000,"description":"Payment"}'
+```
+
+## � Docker Commands
+
+### Basic Operations
+```bash
+# Build and start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f app
+docker-compose logs -f mysql
+
+# Stop services
+docker-compose down
+
+# Rebuild after code changes
+docker-compose up -d --build
+
+# Remove all (including volumes - ⚠️ deletes database)
+docker-compose down -v
+
+# Execute commands in running container
+docker-compose exec app sh
+docker-compose exec mysql mysql -u mywallet_user -p mywallet_db
+```
+
+### Manual Migration in Docker
+```bash
+# Run migrations manually
+docker-compose run --rm migrate \
+  -path /migrations \
+  -database "mysql://mywallet_user:mywallet_pass@tcp(mysql:3306)/mywallet_db" up
+
+# Rollback migration
+docker-compose run --rm migrate \
+  -path /migrations \
+  -database "mysql://mywallet_user:mywallet_pass@tcp(mysql:3306)/mywallet_db" down 1
+```
+
+### Docker Build Only (without compose)
+```bash
+# Build image
+docker build -t mywallet-api .
+
+# Run container
+docker run -d \
+  -p 8080:8080 \
+  --name mywallet \
+  -e JWT_SECRET="your-secret" \
+  -e MYSQL_DSN="user:pass@tcp(host:3306)/db" \
+  mywallet-api
+```
+
+## �📝 Migration Management
+
+### Create New Migration
+```bash
+migrate create -ext sql -dir migrations -seq add_new_table
+```
+
+### Apply Migrations
+```bash
+migrate -path migrations -database "mysql://root:password@tcp(localhost:3306)/mywallet_db" up
+```
+
+### Rollback Last Migration
+```bash
+migrate -path migrations -database "mysql://root:password@tcp(localhost:3306)/mywallet_db" down 1
+```
+
+### Check Migration Version
+```bash
+migrate -path migrations -database "mysql://root:password@tcp(localhost:3306)/mywallet_db" version
+```
+
+## 🏭 Production Deployment
+
+### Docker Deployment (Recommended)
+
+1. **Prepare environment**
+```bash
+# Clone on server
+git clone <repository-url>
+cd mywallet
+
+# Create production .env
+cp .env.example .env
+nano .env  # Edit with production values
+```
+
+2. **Update .env for production**
+```env
+# Server
+GIN_MODE=release
+SERVER_PORT=8080
+
+# Database (strong passwords!)
+MYSQL_ROOT_PASSWORD=<strong-random-password>
+MYSQL_DATABASE=mywallet_db
+MYSQL_USER=mywallet_user
+MYSQL_PASSWORD=<strong-random-password>
+
+# JWT (MUST be 32+ random characters)
+JWT_SECRET=<generate-with-openssl-rand-hex-32>
+JWT_EXPIRATION_HOURS=24
+```
+
+3. **Deploy with Docker Compose**
+```bash
+docker-compose up -d
+
+# Check status
+docker-compose ps
+
+# View logs
+docker-compose logs -f
+```
+
+4. **Setup reverse proxy (Nginx)**
+```nginx
+server {
+    listen 80;
+    server_name api.yourdomain.com;
+
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+5. **Enable HTTPS with Let's Encrypt**
+```bash
+sudo certbot --nginx -d api.yourdomain.com
+```
+
+### Production Checklist
+- [ ] Set `GIN_MODE=release` in .env
+- [ ] Generate strong `JWT_SECRET` (use `openssl rand -hex 32`)
+- [ ] Use strong MySQL passwords
+- [ ] Change default database credentials
+- [ ] Enable HTTPS/TLS
+- [ ] Configure proper CORS origins in middleware
+- [ ] Set up database backups (automated daily)
+- [ ] Implement rate limiting (consider nginx or API gateway)
+- [ ] Set up monitoring (Prometheus + Grafana)
+- [ ] Configure log aggregation (ELK stack or similar)
+- [ ] Load testing with k6/JMeter
+- [ ] Security audit and penetration testing
+- [ ] Set up CI/CD pipeline
+- [ ] Configure firewall rules (UFW/iptables)
+- [ ] Regular dependency updates
+
+### Generate Secure JWT Secret
+```bash
+# Linux/Mac
+openssl rand -hex 32
+
+# Windows PowerShell
+$bytes = New-Object byte[] 32
+(New-Object Security.Cryptography.RNGCryptoServiceProvider).GetBytes($bytes)
+[System.BitConverter]::ToString($bytes).Replace('-','').ToLower()
+```
+
+### Database Backup (Production)
+```bash
+# Backup
+docker-compose exec mysql mysqldump -u mywallet_user -p mywallet_db > backup_$(date +%Y%m%d).sql
+
+# Restore
+docker-compose exec -T mysql mysql -u mywallet_user -p mywallet_db < backup_20260212.sql
+
+# Automated daily backup (crontab)
+0 2 * * * cd /path/to/mywallet && docker-compose exec mysql mysqldump -u mywallet_user -p<password> mywallet_db > /backups/mywallet_$(date +\%Y\%m\%d).sql
+```
+
+## 🔧 Troubleshooting
+
+### Docker Issues
+
+**Port already in use:**
+```bash
+# Check what's using port 8080
+netstat -ano | findstr :8080  # Windows
+lsof -i :8080                  # Linux/Mac
+
+# Change port in docker-compose.yml or .env
+SERVER_PORT=8081
+```
+
+**Database connection failed:**
+```bash
+# Check MySQL is healthy
+docker-compose ps
+docker-compose logs mysql
+
+# Wait for MySQL to be ready (check healthcheck)
+docker-compose up -d mysql
+docker-compose exec mysql mysqladmin ping -h localhost -u root -p
+```
+
+**Migration failed:**
+```bash
+# Check migration logs
+docker-compose logs migrate
+
+# Manually run migrations
+docker-compose run --rm migrate -path /migrations -database "mysql://..." up
+```
+
+### Application Issues
+
+**JWT token invalid:**
+- Ensure `JWT_SECRET` matches between server restarts
+- Check token expiration time
+- Verify token format: `Bearer <token>`
+
+**Balance becomes negative:**
+- This should NOT happen (CHECK constraint prevents it)
+- If it occurs, check database constraints are applied
+- Review transaction logs
+
+**Concurrent transaction errors:**
+- Expected behavior with SELECT FOR UPDATE
+- Client should retry the request
+- Check database connection pool settings
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these guidelines:
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Development Guidelines
+
+- Follow Go best practices and idioms
+- Write tests for new features
+- Update documentation (README, API docs)
+- Ensure all tests pass before submitting PR
+- Use meaningful commit messages
+- Keep pull requests focused on a single feature/fix
+
+### Code Style
+
+- Use `gofmt` for formatting
+- Follow [Effective Go](https://golang.org/doc/effective_go.html) guidelines
+- Add comments for exported functions
+- Keep functions small and focused
+
+## 📝 API Documentation
+
+Full API documentation is available via:
+- **Postman Collection**: Import `E-Wallet-API.postman_collection.json`
+- **README**: Comprehensive examples above
+- **Swagger** (future): Coming soon
+
+## 🔐 Security
+
+### Reporting Security Issues
+
+If you discover a security vulnerability, please email [security@example.com] instead of using the issue tracker.
+
+### Security Features
+
+- Password hashing with bcrypt (cost 12)
+- JWT token authentication
+- SQL injection prevention (parameterized queries)
+- Input validation on all endpoints
+- Rate limiting ready (can be added via middleware)
+- CORS protection
+- Soft deletes for data recovery
