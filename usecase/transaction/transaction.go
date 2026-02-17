@@ -2,11 +2,12 @@ package transaction
 
 import (
 	"mywallet/apperror"
-	"mywallet/constant"
 	"mywallet/dto/request"
 	"mywallet/dto/response"
 	"mywallet/model"
-	"mywallet/utils"
+	"mywallet/shared/constant"
+	"mywallet/shared/utils/converter"
+	"mywallet/shared/utils/pagination"
 	"time"
 
 	"gorm.io/gorm"
@@ -112,27 +113,27 @@ func (uc *TransactionUsecase) GetHistory(userID uint, page, limit int) ([]respon
 	}
 
 	// Create pagination params
-	pagination := utils.NewPaginationParams(page, limit)
+	paginationParams := pagination.NewPaginationParams(page, limit)
 
 	// Get transactions
 	transactions, total, err := uc.t.FindByWalletID(
 		wallet.ID,
-		pagination.Limit,
-		pagination.Offset(),
+		paginationParams.Limit,
+		paginationParams.Offset(),
 	)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// Convert to response
-	txResponses := utils.ModelTransactionsToResponse(transactions)
+	txResponses := converter.ModelTransactionsToResponse(transactions)
 
 	// Build pagination metadata
 	paginationMeta := &response.PaginationMeta{
-		Page:       pagination.Page,
-		Limit:      pagination.Limit,
+		Page:       paginationParams.Page,
+		Limit:      paginationParams.Limit,
 		Total:      total,
-		TotalPages: utils.CalculateTotalPages(total, pagination.Limit),
+		TotalPages: pagination.CalculateTotalPages(total, paginationParams.Limit),
 	}
 
 	return txResponses, paginationMeta, nil

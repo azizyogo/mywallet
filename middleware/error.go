@@ -3,7 +3,7 @@ package middleware
 import (
 	"log"
 	"mywallet/apperror"
-	"mywallet/pkg/httputil"
+	"mywallet/shared/utils/httpresponse"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -16,7 +16,7 @@ func ErrorHandler() gin.HandlerFunc {
 		defer func() {
 			if err := recover(); err != nil {
 				log.Printf("Panic recovered: %v", err)
-				httputil.SendError(c, http.StatusInternalServerError, "Internal server error", nil)
+				httpresponse.SendError(c, http.StatusInternalServerError, "Internal server error", nil)
 			}
 		}()
 		c.Next()
@@ -61,8 +61,8 @@ func getValidationMessage(e validator.FieldError) string {
 // HandleAppError handles application-specific errors
 func HandleAppError(c *gin.Context, err error) {
 	if appErr, ok := err.(*apperror.AppError); ok {
-		httputil.SendError(c, appErr.StatusCode, appErr.Message, nil)
+		httpresponse.SendError(c, appErr.StatusCode, appErr.Message, nil)
 		return
 	}
-	httputil.SendError(c, http.StatusInternalServerError, "Internal server error", nil)
+	httpresponse.SendError(c, http.StatusInternalServerError, "Internal server error", nil)
 }
