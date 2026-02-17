@@ -2,11 +2,11 @@ package wallet
 
 import (
 	"mywallet/apperror"
-	"mywallet/constant"
 	"mywallet/dto/request"
 	"mywallet/dto/response"
 	"mywallet/model"
-	"mywallet/utils"
+	"mywallet/shared/constant"
+	"mywallet/shared/utils"
 	"time"
 
 	"gorm.io/gorm"

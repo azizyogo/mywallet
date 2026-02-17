@@ -2,12 +2,12 @@ package transaction
 
 import (
 	"mywallet/apperror"
-	"mywallet/constant"
 	"mywallet/dto/request"
 	"mywallet/dto/response"
 	"mywallet/model"
 	"mywallet/pkg/pagination"
-	"mywallet/utils"
+	"mywallet/shared/constant"
+	"mywallet/shared/utils"
 	"time"
 
 	"gorm.io/gorm"

@@ -7,7 +7,7 @@ import (
 	"mywallet/model"
 	"mywallet/pkg/auth"
 	"mywallet/pkg/hash"
-	"mywallet/utils"
+	"mywallet/shared/utils"
 )
 
 func (uc *UserUsecase) Register(req request.RegisterRequest) (*response.UserResponse, error) {
