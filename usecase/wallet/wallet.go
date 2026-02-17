@@ -6,7 +6,7 @@ import (
 	"mywallet/dto/response"
 	"mywallet/model"
 	"mywallet/shared/constant"
-	"mywallet/shared/utils"
+	"mywallet/shared/utils/converter"
 	"time"
 
 	"gorm.io/gorm"
@@ -18,7 +18,7 @@ func (uc *WalletUsecase) GetBalance(userID uint) (*response.WalletResponse, erro
 		return nil, err
 	}
 
-	walletResp := utils.ModelWalletToResponse(wallet)
+	walletResp := converter.ModelWalletToResponse(wallet)
 	return &walletResp, nil
 }
 

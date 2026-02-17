@@ -5,9 +5,9 @@ import (
 	"mywallet/dto/request"
 	"mywallet/dto/response"
 	"mywallet/model"
-	"mywallet/pkg/pagination"
 	"mywallet/shared/constant"
-	"mywallet/shared/utils"
+	"mywallet/shared/utils/converter"
+	"mywallet/shared/utils/pagination"
 	"time"
 
 	"gorm.io/gorm"
@@ -126,7 +126,7 @@ func (uc *TransactionUsecase) GetHistory(userID uint, page, limit int) ([]respon
 	}
 
 	// Convert to response
-	txResponses := utils.ModelTransactionsToResponse(transactions)
+	txResponses := converter.ModelTransactionsToResponse(transactions)
 
 	// Build pagination metadata
 	paginationMeta := &response.PaginationMeta{

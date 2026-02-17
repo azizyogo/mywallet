@@ -3,8 +3,8 @@ package controller
 import (
 	"mywallet/dto/request"
 	"mywallet/middleware"
-	"mywallet/pkg/httputil"
 	"mywallet/server"
+	"mywallet/shared/utils/httpresponse"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -13,7 +13,7 @@ import (
 func Register(c *gin.Context) {
 	var req request.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		httputil.SendError(c, http.StatusBadRequest, "Validation failed", middleware.ValidationErrorResponse(err))
+		httpresponse.SendError(c, http.StatusBadRequest, "Validation failed", middleware.ValidationErrorResponse(err))
 		return
 	}
 
@@ -23,7 +23,7 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	httputil.SendSuccess(c, http.StatusCreated, gin.H{
+	httpresponse.SendSuccess(c, http.StatusCreated, gin.H{
 		"user": user,
 	})
 }
@@ -31,7 +31,7 @@ func Register(c *gin.Context) {
 func Login(c *gin.Context) {
 	var req request.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		httputil.SendError(c, http.StatusBadRequest, "Validation failed", middleware.ValidationErrorResponse(err))
+		httpresponse.SendError(c, http.StatusBadRequest, "Validation failed", middleware.ValidationErrorResponse(err))
 		return
 	}
 
@@ -41,13 +41,13 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	httputil.SendSuccess(c, http.StatusOK, userResp)
+	httpresponse.SendSuccess(c, http.StatusOK, userResp)
 }
 
 func GetProfile(c *gin.Context) {
 	userID, exists := middleware.GetUserID(c)
 	if !exists {
-		httputil.SendError(c, http.StatusUnauthorized, "Unauthorized", nil)
+		httpresponse.SendError(c, http.StatusUnauthorized, "Unauthorized", nil)
 		return
 	}
 
@@ -57,7 +57,7 @@ func GetProfile(c *gin.Context) {
 		return
 	}
 
-	httputil.SendSuccess(c, http.StatusOK, gin.H{
+	httpresponse.SendSuccess(c, http.StatusOK, gin.H{
 		"user": user,
 	})
 }

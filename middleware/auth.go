@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"mywallet/apperror"
-	"mywallet/pkg/auth"
-	"mywallet/pkg/httputil"
+	"mywallet/shared/utils/auth"
+	"mywallet/shared/utils/httpresponse"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -26,14 +26,14 @@ func AuthMiddleware(validator AuthValidator) gin.HandlerFunc {
 		// Get Authorization header
 		authHeader := c.GetHeader(AuthorizationHeader)
 		if authHeader == "" {
-			httputil.SendError(c, apperror.ErrUnauthorized.StatusCode, apperror.ErrUnauthorized.Message, nil)
+			httpresponse.SendError(c, apperror.ErrUnauthorized.StatusCode, apperror.ErrUnauthorized.Message, nil)
 			c.Abort()
 			return
 		}
 
 		// Check Bearer prefix
 		if !strings.HasPrefix(authHeader, BearerPrefix) {
-			httputil.SendError(c, apperror.ErrUnauthorized.StatusCode, "Invalid authorization header format", nil)
+			httpresponse.SendError(c, apperror.ErrUnauthorized.StatusCode, "Invalid authorization header format", nil)
 			c.Abort()
 			return
 		}
@@ -44,7 +44,7 @@ func AuthMiddleware(validator AuthValidator) gin.HandlerFunc {
 		// Validate token
 		claims, err := validator.ValidateToken(tokenString)
 		if err != nil {
-			httputil.SendError(c, apperror.ErrUnauthorized.StatusCode, apperror.ErrUnauthorized.Message, nil)
+			httpresponse.SendError(c, apperror.ErrUnauthorized.StatusCode, apperror.ErrUnauthorized.Message, nil)
 			c.Abort()
 			return
 		}

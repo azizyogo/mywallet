@@ -3,8 +3,8 @@ package controller
 import (
 	"mywallet/dto/request"
 	"mywallet/middleware"
-	"mywallet/pkg/httputil"
 	"mywallet/server"
+	"mywallet/shared/utils/httpresponse"
 	"net/http"
 	"strconv"
 
@@ -14,13 +14,13 @@ import (
 func Transfer(c *gin.Context) {
 	userID, exists := middleware.GetUserID(c)
 	if !exists {
-		httputil.SendError(c, http.StatusUnauthorized, "Unauthorized", nil)
+		httpresponse.SendError(c, http.StatusUnauthorized, "Unauthorized", nil)
 		return
 	}
 
 	var req request.TransferRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		httputil.SendError(c, http.StatusBadRequest, "Validation failed", middleware.ValidationErrorResponse(err))
+		httpresponse.SendError(c, http.StatusBadRequest, "Validation failed", middleware.ValidationErrorResponse(err))
 		return
 	}
 
@@ -30,13 +30,13 @@ func Transfer(c *gin.Context) {
 		return
 	}
 
-	httputil.SendSuccess(c, http.StatusOK, result)
+	httpresponse.SendSuccess(c, http.StatusOK, result)
 }
 
 func GetHistory(c *gin.Context) {
 	userID, exists := middleware.GetUserID(c)
 	if !exists {
-		httputil.SendError(c, http.StatusUnauthorized, "Unauthorized", nil)
+		httpresponse.SendError(c, http.StatusUnauthorized, "Unauthorized", nil)
 		return
 	}
 
@@ -50,5 +50,5 @@ func GetHistory(c *gin.Context) {
 		return
 	}
 
-	httputil.SendSuccessWithMeta(c, http.StatusOK, transactions, pagination)
+	httpresponse.SendSuccessWithMeta(c, http.StatusOK, transactions, pagination)
 }

@@ -74,22 +74,57 @@ Clean layered architecture with clear separation of concerns:
 
 ```
 mywallet/
-├── controller/       # HTTP handlers (presentation layer)
-├── usecase/          # Business logic & orchestration
-├── repository/       # Data access layer
-├── model/            # Database models
-├── dto/              # Request/Response DTOs
-├── middleware/       # Auth, CORS, error handling
-├── apperror/         # Application-specific errors
-├── constant/         # Application constants
-├── utils/            # App utilities (converter, pagination)
-├── pkg/              # Reusable packages (jwt, hash, validator)
-├── config/           # Configuration management
-├── server/           # Server initialization
-└── migrations/       # Database migrations
+├── main.go          # Application entry point
+├── server/          # Server init & dependency injection
+│   └── http/        # HTTP router setup    
+├── controller/      # HTTP handlers
+├── usecase/         # Business logic
+├── repository/      # Data access layer
+├── model/           # Database models / entities
+├── dto/             # Data Transfer Objects
+├── middleware/      # Middlewares
+├── apperror/        # Custom error types
+├── shared/          # Shared utilities across layers
+│   ├── constant/    # Constants
+│   └── utils/       # Utilities & helper functions
+├── config/          # Config management
+└── migrations/      # Database migrations
 ```
 
 **Architecture Pattern**: Controller → Usecase → Repository
+
+### 📂 Folder Structure Explained
+
+#### **Core Application Layers**
+- **`controller/`** - Handlers that parse requests and call usecases
+- **`usecase/`** - Business logic
+- **`repository/`** - Database operations abstraction
+- **`model/`** - Database entities
+
+#### **Data Transfer**
+- **`dto/request/`** - Object from client payload
+- **`dto/response/`** - Object for API response
+
+#### **Infrastructure**
+- **`server/`** - App bootstrapping (DB connection, dependency injection)
+- **`middleware/`** - Middlewares
+- **`config/`** - Environment variable management
+
+#### **Shared Code**
+- **`shared/constant/`** - Domain constants (transaction types, status enums)
+- **`shared/utils/`** - All utility functions and helpers:
+  - `auth/` - JWT token utilities (generation, parsing, validation)
+  - `hash/` - Password hashing with bcrypt
+  - `httputil/` - HTTP response formatting
+  - `pagination/` - Pagination logic and helpers
+  - `validator/` - Input validation utilities
+  - `converter/` - Model-to-DTO conversion functions
+
+#### **Error Handling**
+- **`apperror/`** - Custom error types with HTTP status codes
+
+#### **Database**
+- **`migrations/`** - SQL migration files managed by golang-migrate
 
 ## ✨ Features
 

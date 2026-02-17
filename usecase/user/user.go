@@ -5,9 +5,9 @@ import (
 	"mywallet/dto/request"
 	"mywallet/dto/response"
 	"mywallet/model"
-	"mywallet/pkg/auth"
-	"mywallet/pkg/hash"
-	"mywallet/shared/utils"
+	"mywallet/shared/utils/auth"
+	"mywallet/shared/utils/converter"
+	"mywallet/shared/utils/hash"
 )
 
 func (uc *UserUsecase) Register(req request.RegisterRequest) (*response.UserResponse, error) {
@@ -39,7 +39,7 @@ func (uc *UserUsecase) Register(req request.RegisterRequest) (*response.UserResp
 		return nil, err
 	}
 
-	userResp := utils.ModelUserToResponse(user)
+	userResp := converter.ModelUserToResponse(user)
 	return &userResp, nil
 }
 
@@ -61,7 +61,7 @@ func (uc *UserUsecase) Login(req request.LoginRequest) (*response.AuthResponse, 
 		return nil, err
 	}
 
-	userResp := utils.ModelUserToResponse(user)
+	userResp := converter.ModelUserToResponse(user)
 	return &response.AuthResponse{
 		Token: token,
 		User:  userResp,
@@ -74,7 +74,7 @@ func (uc *UserUsecase) GetProfile(userID uint) (*response.UserResponse, error) {
 		return nil, apperror.ErrUserNotFound
 	}
 
-	userResp := utils.ModelUserToResponse(user)
+	userResp := converter.ModelUserToResponse(user)
 	return &userResp, nil
 }
 
